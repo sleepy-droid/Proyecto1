@@ -22,7 +22,7 @@
             <h1>🏆 Mini Proyecto #2 - PHP</h1>
             <h2>Estructuras de Control, Funciones y Clases</h2>
             <p><strong>Universidad Tecnológica de Panamá</strong> - Facultad de Ingeniería en Sistemas Computacionales</p>
-            <p><strong>Integrantes:</strong> [Estudiante #1], [Estudiante #2]</p>
+            <p><strong>Integrantes:</strong> Sebastián Sanchez, Iván Ramírez López</p>
             <hr>
         </header>
 
