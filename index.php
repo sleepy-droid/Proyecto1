@@ -13,13 +13,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Proyecto #2 - PHP</title>
+    <title>Mini Proyecto #1 - PHP</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🏆 Mini Proyecto #2 - PHP</h1>
+            <h1>Mini Proyecto #1 - PHP</h1>
             <h2>Estructuras de Control, Funciones y Clases</h2>
             <p><strong>Universidad Tecnológica de Panamá</strong> - Facultad de Ingeniería en Sistemas Computacionales</p>
             <p><strong>Integrantes:</strong> Sebastián Sanchez, Iván Ramírez López</p>
