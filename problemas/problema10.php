@@ -141,8 +141,8 @@ class SistemaVentas {
         $ventas = $this->getVentas();
         
         $estadisticas = [
-            'mejor_vendedor' => ['id' => 0, 'total' => 0],
-            'producto_mas_vendido' => ['id' => 0, 'total' => 0],
+            'mejor_vendedor' => ['id' => 0, 'total' => 0, 'nombre' => 'No disponible'],
+            'producto_mas_vendido' => ['id' => 0, 'total' => 0, 'nombre' => 'No disponible'],
             'total_general' => 0
         ];
         
@@ -162,14 +162,22 @@ class SistemaVentas {
         // Encontrar mejor vendedor
         foreach ($totalesVendedores as $vendedorId => $total) {
             if ($total > $estadisticas['mejor_vendedor']['total']) {
-                $estadisticas['mejor_vendedor'] = ['id' => $vendedorId, 'total' => $total];
+                $estadisticas['mejor_vendedor'] = [
+                    'id' => $vendedorId, 
+                    'total' => $total,
+                    'nombre' => $vendedores[$vendedorId]['nombre'] . ' ' . $vendedores[$vendedorId]['apellido']
+                ];
             }
         }
         
         // Encontrar producto más vendido
         foreach ($totalesProductos as $productoId => $total) {
             if ($total > $estadisticas['producto_mas_vendido']['total']) {
-                $estadisticas['producto_mas_vendido'] = ['id' => $productoId, 'total' => $total];
+                $estadisticas['producto_mas_vendido'] = [
+                    'id' => $productoId, 
+                    'total' => $total,
+                    'nombre' => $productos[$productoId]
+                ];
             }
         }
         
@@ -289,11 +297,6 @@ $sistemaVentas = new SistemaVentas();
         
         // Generar estadísticas
         $estadisticas = $sistemaVentas->generarEstadisticas();
-        $vendedores = $sistemaVentas->getVendedores();
-        $productos = $sistemaVentas->getProductos();
-        
-        $mejorVendedor = $vendedores[$estadisticas['mejor_vendedor']['id']];
-        $productoMasVendido = $productos[$estadisticas['producto_mas_vendido']['id']];
         
         echo "<div class='resultado'>";
         echo "<h3>🏆 Estadísticas Destacadas</h3>";
@@ -301,12 +304,12 @@ $sistemaVentas = new SistemaVentas();
         echo "<tr><th>Métrica</th><th>Resultado</th><th>Valor</th></tr>";
         echo "<tr>
                 <td>Mejor Vendedor</td>
-                <td>{$mejorVendedor['nombre']} {$mejorVendedor['apellido']}</td>
+                <td>{$estadisticas['mejor_vendedor']['nombre']}</td>
                 <td>$" . number_format($estadisticas['mejor_vendedor']['total'], 2) . "</td>
               </tr>";
         echo "<tr>
                 <td>Producto Más Vendido</td>
-                <td>$productoMasVendido</td>
+                <td>{$estadisticas['producto_mas_vendido']['nombre']}</td>
                 <td>$" . number_format($estadisticas['producto_mas_vendido']['total'], 2) . "</td>
               </tr>";
         echo "<tr>
