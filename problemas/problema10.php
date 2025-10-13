@@ -12,6 +12,11 @@
 include '../includes/Validaciones.php';
 include '../includes/Navegacion.php';
 
+// Iniciar sesión para persistir datos
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
  * Clase para manejar el sistema de ventas
  */
@@ -21,8 +26,14 @@ class SistemaVentas {
     private $productos;
     
     public function __construct() {
-        // Inicializar arreglo bidimensional de ventas
-        $this->ventas = array_fill(1, 4, array_fill(1, 5, 0));
+        // Inicializar desde sesión o crear nuevo
+        if (isset($_SESSION['sistema_ventas'])) {
+            $this->ventas = $_SESSION['sistema_ventas'];
+        } else {
+            // Inicializar arreglo bidimensional de ventas
+            $this->ventas = array_fill(1, 4, array_fill(1, 5, 0));
+            $this->guardarEnSesion();
+        }
         
         // Datos de ejemplo para vendedores
         $this->vendedores = [
@@ -43,14 +54,31 @@ class SistemaVentas {
     }
     
     /**
+     * Guardar datos en sesión
+     */
+    private function guardarEnSesion() {
+        $_SESSION['sistema_ventas'] = $this->ventas;
+    }
+    
+    /**
      * Agregar venta al sistema
      */
     public function agregarVenta($vendedorId, $productoId, $monto) {
         if (isset($this->ventas[$vendedorId][$productoId])) {
             $this->ventas[$vendedorId][$productoId] += $monto;
+            $this->guardarEnSesion();
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Reiniciar todas las ventas
+     */
+    public function reiniciarVentas() {
+        $this->ventas = array_fill(1, 4, array_fill(1, 5, 0));
+        $this->guardarEnSesion();
+        return true;
     }
     
     /**
@@ -72,6 +100,19 @@ class SistemaVentas {
      */
     public function getVentas() {
         return $this->ventas;
+    }
+    
+    /**
+     * Obtener total general de ventas
+     */
+    public function getTotalGeneral() {
+        $total = 0;
+        foreach ($this->ventas as $vendedorVentas) {
+            foreach ($vendedorVentas as $venta) {
+                $total += $venta;
+            }
+        }
+        return $total;
     }
     
     /**
@@ -241,55 +282,78 @@ $sistemaVentas = new SistemaVentas();
         
         <?php
         // Procesar formulario de ventas
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['agregar_venta'])) {
-            $vendedorId = $_POST['vendedor'] ?? '';
-            $productoId = $_POST['producto'] ?? '';
-            $monto = $_POST['monto'] ?? '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
-            $errores = [];
-            
-            // Validaciones
-            if (empty($vendedorId)) {
-                $errores[] = "El vendedor es requerido";
-            }
-            if (empty($productoId)) {
-                $errores[] = "El producto es requerido";
-            }
-            if (empty($monto)) {
-                $errores[] = "El monto es requerido";
-            } elseif (!is_numeric($monto) || $monto <= 0) {
-                $errores[] = "El monto debe ser un número positivo";
-            }
-            
-            if (empty($errores)) {
-                $vendedorId = (int)$vendedorId;
-                $productoId = (int)$productoId;
-                $monto = (float)$monto;
+            // Agregar venta
+            if (isset($_POST['agregar_venta'])) {
+                $vendedorId = $_POST['vendedor'] ?? '';
+                $productoId = $_POST['producto'] ?? '';
+                $monto = $_POST['monto'] ?? '';
                 
-                if ($sistemaVentas->agregarVenta($vendedorId, $productoId, $monto)) {
-                    echo "<div class='resultado'>";
-                    echo "<h3>✅ Venta agregada exitosamente</h3>";
-                    echo "<p><strong>Vendedor:</strong> Vendedor $vendedorId</p>";
-                    echo "<p><strong>Producto:</strong> Producto $productoId</p>";
-                    echo "<p><strong>Monto:</strong> $" . number_format($monto, 2) . "</p>";
-                    echo "</div>";
+                $errores = [];
+                
+                // Validaciones
+                if (empty($vendedorId)) {
+                    $errores[] = "El vendedor es requerido";
+                }
+                if (empty($productoId)) {
+                    $errores[] = "El producto es requerido";
+                }
+                if (empty($monto)) {
+                    $errores[] = "El monto es requerido";
+                } elseif (!is_numeric($monto) || $monto <= 0) {
+                    $errores[] = "El monto debe ser un número positivo";
+                }
+                
+                if (empty($errores)) {
+                    $vendedorId = (int)$vendedorId;
+                    $productoId = (int)$productoId;
+                    $monto = (float)$monto;
+                    
+                    if ($sistemaVentas->agregarVenta($vendedorId, $productoId, $monto)) {
+                        echo "<div class='resultado'>";
+                        echo "<h3>✅ Venta agregada exitosamente</h3>";
+                        echo "<p><strong>Vendedor:</strong> Vendedor $vendedorId</p>";
+                        echo "<p><strong>Producto:</strong> Producto $productoId</p>";
+                        echo "<p><strong>Monto:</strong> $" . number_format($monto, 2) . "</p>";
+                        echo "<p><strong>Total acumulado:</strong> $" . number_format($sistemaVentas->getTotalGeneral(), 2) . "</p>";
+                        echo "</div>";
+                    } else {
+                        echo "<div class='error'>";
+                        echo "<h3>❌ Error al agregar venta</h3>";
+                        echo "<p>Los datos proporcionados no son válidos.</p>";
+                        echo "</div>";
+                    }
                 } else {
                     echo "<div class='error'>";
-                    echo "<h3>❌ Error al agregar venta</h3>";
-                    echo "<p>Los datos proporcionados no son válidos.</p>";
+                    echo "<h3>❌ Errores encontrados:</h3>";
+                    echo "<ul>";
+                    foreach ($errores as $error) {
+                        echo "<li>$error</li>";
+                    }
+                    echo "</ul>";
                     echo "</div>";
                 }
-            } else {
-                echo "<div class='error'>";
-                echo "<h3>❌ Errores encontrados:</h3>";
-                echo "<ul>";
-                foreach ($errores as $error) {
-                    echo "<li>$error</li>";
+            }
+            
+            // Reiniciar ventas
+            if (isset($_POST['reiniciar_ventas'])) {
+                if ($sistemaVentas->reiniciarVentas()) {
+                    echo "<div class='resultado'>";
+                    echo "<h3>🔄 Ventas reiniciadas exitosamente</h3>";
+                    echo "<p>Todas las ventas han sido establecidas en cero.</p>";
+                    echo "</div>";
                 }
-                echo "</ul>";
-                echo "</div>";
             }
         }
+        
+        // Mostrar resumen actual
+        $totalGeneral = $sistemaVentas->getTotalGeneral();
+        echo "<div class='info' style='background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0;'>";
+        echo "<h3>📈 Resumen Actual del Sistema</h3>";
+        echo "<p><strong>Ventas totales acumuladas:</strong> $" . number_format($totalGeneral, 2) . "</p>";
+        echo "<p><strong>Estado:</strong> " . ($totalGeneral > 0 ? "Con datos registrados" : "Sin ventas registradas") . "</p>";
+        echo "</div>";
         
         // Mostrar reporte principal
         echo "<h2>📊 Reporte de Ventas del Mes</h2>";
@@ -430,7 +494,11 @@ $sistemaVentas = new SistemaVentas();
                     </div>
                 </div>
                 
-                <input type="submit" name="agregar_venta" value="Agregar Venta">
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <input type="submit" name="agregar_venta" value="➕ Agregar Venta" class="btn-menu" style="background: #27ae60;">
+                    <input type="submit" name="reiniciar_ventas" value="🔄 Reiniciar Todas las Ventas" class="btn-menu" style="background: #e74c3c;" 
+                           onclick="return confirm('¿Está seguro de que desea reiniciar todas las ventas? Se perderán todos los datos.')">
+                </div>
             </form>
         </div>
         
@@ -440,6 +508,7 @@ $sistemaVentas = new SistemaVentas();
             <p><strong>Vendedores:</strong> 4 vendedores (1-4) con nombres y apellidos</p>
             <p><strong>Productos:</strong> 5 productos diferentes (1-5) con categorías específicas</p>
             <p><strong>Arreglo Bidimensional:</strong> ventas[vendedor][producto] almacena montos acumulados</p>
+            <p><strong>Persistencia:</strong> Los datos se mantienen entre recargas usando sesiones PHP</p>
             
             <h4>🎯 Características Implementadas:</h4>
             <ul>
@@ -448,6 +517,8 @@ $sistemaVentas = new SistemaVentas();
                 <li>Gráficas de barras y doughnut para visualización</li>
                 <li>Estadísticas automáticas (mejor vendedor, producto más vendido)</li>
                 <li>Formulario interactivo para agregar ventas</li>
+                <li>Persistencia de datos entre recargas</li>
+                <li>Opción para reiniciar todas las ventas</li>
                 <li>Validación de datos de entrada</li>
             </ul>
         </div>
